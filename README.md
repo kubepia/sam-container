@@ -32,4 +32,4 @@
     ![](doc/img/2020-08-25-21-39-19.png)
 
 ## GOTO Tutorial
-[Doc](doc/README.md)
+[tutorial](doc/README.md)
