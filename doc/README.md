@@ -5,6 +5,7 @@
 - Use volume
 - Use network
 - Build my own container
+- [Tip !!](cheatsheet.md)
 
 
 ## Concept & convension
@@ -143,3 +144,41 @@ container | virtual machine
 
 ### Dockerfile Structure
 - From : build에 사용되는 base이미지
+- Add, Copy : copy files from local machine or url(Add)
+- Workdir : build 시 container 실행 경로
+- Run : shell command in container
+- Expose : 명시적으로 container에서 사용되는 port선언
+- Entrypoint,CMD :Container가 실행될 명령어 정의
+  - Entrypoint 는 재정의 될 수 없음
+  - CMD는 docker run 시 override 가능함
+    ``` Dockerfile
+    FROM ubuntu
+    RUN apt-get update
+    ENTRYPOINT ["echo", "Hello"]
+    CMD ["World"]
+    ```
+    ``` shell
+    sudo docker run [image] 
+    --> Hello World
+    sudo docker run [image] "kubepia"
+    --> Hello kubepia
+    ```
+
+### Build :Staged
+> Application Build시 compile환경과 실행환경을 동일한 환경으로 맞추기 위해서 사용됨.  
+> 또한, CI/CD Pipeline에 build에 필요한 환경을 Pipeline의 모듈로 하기 보다는  
+> Container 자체적으로 그 환경을 설정하여, AnyWhere, Anytime Build가 가능하게 하기 위함.  
+> GitAction, Gitlab CD와 같은 Public환경에서 Application Build와 함께 Container를 Build 할 경우, Build/Compile에 필요한 종속성을 해당 Service Provider에서 제공되는 것을 사용하는 것이 아닌, Source Level(Dockerfile)의 정의된 내용을 기준으로 처리 가능
+
+``` Dockerfile
+FROM maven:3.5.2-jdk-9 AS build
+COPY src /usr/src/app/src
+COPY pom.xml /usr/src/app
+RUN mvn -f /usr/src/app/pom.xml clean package
+
+FROM openjdk:9
+COPY --from=build /usr/src/app/target/flighttracker-1.0.0-SNAPSHOT.jar /usr/app/flighttracker-1.0.0-SNAPSHOT.jar 
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/usr/app/flighttracker-1.0.0-SNAPSHOT.jar"]
+```
+
