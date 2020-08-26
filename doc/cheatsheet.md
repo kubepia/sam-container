@@ -21,3 +21,17 @@
 
 ## 불필요한 file 제거 : .dockerignore
 > Copy/Add 실행시에 .dockerignore에 지정한 패턴의 file은 제외되어 복사됨
+
+## 실행속도 향상을 위한 경량화
+> host에서 최초 실행시에는 registry로부터 다운로드되기 때문에 사이즈를 줄여야, Failover, ScaleOut시에 빠른 응답을 확인 할 수 있음.  
+> 그러나, 경량화된 base image에는 필요한 기본 명령어(vi,curl 등)가 없음으로 필요시 확장 필요
+
+### 주요 base image
+- alpine : 36mb의 경량화 리눅스 debian계열
+- slim, burst, stretch : 용도별로 기 생성된 base image
+
+> 예) openjdk:16-alpine
+
+### CI/CD를 위한 Pipeline구성시 주의 해야 할 점
+> latest는 literal한 버전 이름임으로, 최신버전을 push하고 tag를 latest로 하여 push를 두번해야함.  
+> 특히, image의 Tag는 통산 Git의 Release와 동일하게 적용함으로써, 추적성을 보장할 수 있음.
