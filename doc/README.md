@@ -6,6 +6,7 @@
 - Use network
 - Build my own container
 
+
 ## Concept & convension
 container | virtual machine
 :----------:|:----------------:
@@ -64,3 +65,81 @@ container | virtual machine
 
 
 ## Use Volume
+![](img/2020-08-26-10-22-10.png)
+
+> container에서 필요한 Storage를 정의, Host 또는 Filesystem을 마운트하여 사용할 수 있음.  
+> 명시적으로 docker volume을 생성하여 사용할 수도 있으며,
+> 실행시점에 연결설정을 할 수 있음  
+
+- -v, --volume : -v [host|filesystem]:[container_path]
+- -m, --mount : [docker documentation](https://docs.docker.com/storage/bind-mounts/)
+
+### Step 1: run container with volume
+1. create directory : ex) /home/azureuser/storage
+2. sudo docker run -d --name nginx1 -v /home/azureuser/storage:/storage nginx
+3. sudo docker run -d --name nginx2 -v /home/azureuser/storage:/storage nginx
+
+### Step 2: create file
+1. sudo docker exec -it nginx1 /bin/bash
+   1. echo "Hello Docker" > /storage/message.txt
+2. sudo docker exec -it nginx2 /bin/bash
+   1. cat /storage/message.txt
+3. cd /home/azureuser/storage
+   1. cat /home/azureuser/storage/message.txt
+
+### Step 3: Clean up
+1. sudo docker stop nginx1 nginx2
+2. sudo docker rm nginx1
+3. sudo docker stop nginx2
+4. sudo docker rm nginx2
+
+
+## Use Network
+> container는 가상네트웍 기술을 활용하여, host 또는 별도의 network i/f를 구성하여 사용할 수 있으며, plugin 구조로 다양한 가상네트웍을 사용할 수 있음.
+> kubernetes의 경우 calico(기본값)를 활용하여 cluster(overlay) 네트웍을 구성함.
+
+### kind
+- bridge: 기본 네트웍드라이브로서,container 간, host와 isolation된 네트웍 구성
+- host: host의 network i/f를 직접 활용. 권한이 필요함
+- overlay : docker swarm, kubernetes등의 cluster 네트웍에 적용
+
+### Step 1: run container nginx1 and nginx2 with network
+1. sudo docker run -d --name nginx1  nginx
+2. sudo docker run -d --name nginx2 --link nginx1 nginx
+
+### Step 2: check network between containers
+1. sudo docker exec -it nginx2 /bin/bash
+   1. curl http://nginx1
+   2. cat /etc/hosts
+
+### Step 3: Clean up
+1. sudo docker stop nginx1 nginx2
+2. sudo docker rm nginx1 nginx2
+
+## Use environment variable
+> container 실행시에 container에서 사용하고자 하는 환경변수를 주입하여, container 실행 환경을 관리 할 수 있음.  
+> 활용예로 실행모드(dev/staging/production), 서비스포트, i/f 대상 ip, application에서 사용하는 file 선택 등에 적용
+
+1. -e, --env : 환경변수 key=value 로 지정
+
+### Step 1: Run container with env
+1. sudo docker run -d --name nginx -e DB_IP="10.10.10.20" nginx
+2. sudo docker exec -it ngnix /bin/bash
+   1. echo $DB_IP
+
+### Step 2: clean up
+1. sudo docker stop ngnix
+2. sudodocker rm ngnix
+
+## Build my own container
+> Container Image를 만드는 순서는  
+> build > tagging > push  
+> *(주)* Tag 정보는 단순히 버전 이름이며, conventional하게 사용되는 xxx:latest는 단순 문자열로 tag의 기본버전명이다.  
+> container pull, run등을 실행할 때 tag가 정보가 없는 경우 tag이름이 latest가 사용되지만.  의미적으로 최신버전을 지칭하는것이 아니므로  
+> Relase 할 때 latest tag를 중복해서 push해야 함
+
+> container image는 명령어 단위로 layer로 구성되어, 버전별로 layer를 분석하여 incremental build가 되며, 업데이트 시에도 변경되 layer만 업데이트됨.  
+> 따라서, Dockerfile을 작성할 때 
+
+### Dockerfile Structure
+- From : build에 사용되는 base이미지
